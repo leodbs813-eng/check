@@ -1,0 +1,653 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+
+   <link class="icon-png" rel="icon" href="/IMG_6116.PNG" type="image/png">                
+    <link rel="apple-touch-icon" href="/IMG_6116.PNG">                
+    <link class="icon-png-dup" rel="icon" href="/IMG_6116.PNG" type="image/png">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Routine Item Checker</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", Pretendard, sans-serif;
+            background-color: #000000;
+            color: #ffffff;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Smooth UI transitions */
+        .page-transition {
+            transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Glassmorphism effects */
+        .glass-circle {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Circular progress ring */
+        .progress-ring__circle {
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+
+        /* Hide scrollbars for clean UI */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Subtle pulsating animation */
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 15px rgba(255, 255, 255, 0.08); }
+            50% { box-shadow: 0 0 30px rgba(255, 255, 255, 0.25); }
+        }
+        .holding-active {
+            animation: pulse-glow 1s infinite alternate;
+        }
+
+        /* */
+        .complete-snap {
+            transform: scale(1.04) !important;
+            border-color: rgba(255, 255, 255, 0.4) !important;
+            transition: transform 0.12s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+        }
+
+        /* Apple Face ID / App Store Style Clean Checkmark Animation */
+        @keyframes appleFaceIdAppear {
+            0% {
+                transform: scale(0.82);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes appleStrokeDraw {
+            0% {
+                stroke-dashoffset: 45;
+            }
+            100% {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        .apple-check-active {
+            animation: appleFaceIdAppear 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .apple-check-active path {
+            stroke-dasharray: 45;
+            stroke-dashoffset: 45;
+            animation: appleStrokeDraw 0.4s cubic-bezier(0.25, 1, 0.5, 1) 0.08s forwards;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen overflow-hidden flex flex-col justify-between items-center select-none bg-black text-white">
+
+    <!-- MAIN SCREEN -->
+    <div id="mainScreen" class="w-full h-full flex flex-col justify-between items-center p-6 page-transition opacity-100 relative z-10">
+        <!-- Top Bar: Settings Button Only -->
+        <div class="w-full flex justify-end pt-2 pr-2">
+            <button id="openSettingsBtn" class="p-3 text-zinc-400 hover:text-white transition-colors active:scale-90 rounded-full focus:outline-none">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" 
+                          d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                    </path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Center Top: Item Title -->
+        <div class="flex flex-col items-center justify-center mt-6">
+            <h1 id="currentItemText" class="text-3xl md:text-4xl font-bold tracking-tight text-center text-white min-h-[3rem] transition-all duration-300">
+                <!-- Item name appears here -->
+            </h1>
+        </div>
+
+        <!-- Center: Interactive Large Circle with Progress Ring -->
+        <div class="relative flex items-center justify-center my-auto">
+            <!-- Progress Ring SVG Overlay -->
+            <svg class="w-64 h-64 md:w-72 md:h-72 pointer-events-none absolute z-20" viewBox="0 0 120 120">
+                <circle
+                    class="text-zinc-800"
+                    stroke-width="3"
+                    stroke="currentColor"
+                    fill="transparent"
+                    r="52"
+                    cx="60"
+                    cy="60"
+                />
+                <circle
+                    id="progressRing"
+                    class="progress-ring__circle text-white"
+                    stroke-width="3.5"
+                    stroke-dasharray="326.72"
+                    stroke-dashoffset="326.72"
+                    stroke-linecap="round"
+                    stroke="currentColor"
+                    fill="transparent"
+                    r="52"
+                    cx="60"
+                    cy="60"
+                />
+            </svg>
+
+            <!-- Main Interactive Touch Area -->
+            <div id="holdCircleBtn" class="w-56 h-56 md:w-64 md:h-64 rounded-full glass-circle flex items-center justify-center cursor-pointer active:scale-95 transition-transform duration-200 z-10">
+                <!-- Clean center icon when all complete -->
+                <div id="circleContent" class="transition-opacity duration-300 flex items-center justify-center">
+                    <div id="checkIcon" class="hidden flex items-center justify-center text-white">
+                        <svg class="w-20 h-20 md:w-24 md:h-24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Spacer to maintain perfect vertical center balance -->
+        <div class="pb-10"></div>
+    </div>
+
+    <!-- SETTINGS SCREEN -->
+    <div id="settingsScreen" class="w-full h-full absolute inset-0 bg-black flex flex-col page-transition opacity-0 pointer-events-none z-30">
+        <!-- Header Bar -->
+        <div class="flex items-center justify-between px-5 pt-12 pb-4 border-b border-zinc-900">
+            <button id="closeSettingsBtn" class="p-2 text-zinc-400 hover:text-white active:scale-90 transition-transform">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+            </button>
+            <div class="w-7"></div><!-- Spacer for center alignment -->
+        </div>
+
+        <!-- Days Selector Strip (Horizontal Scroll / Swipeable) -->
+        <div class="w-full border-b border-zinc-900 py-4 px-4 overflow-x-auto no-scrollbar flex space-x-3 items-center justify-start md:justify-center">
+            <!-- Dynamic Day Buttons (월, 화, 수, 목, 금, 토, 일) -->
+            <div id="daySelectorContainer" class="flex space-x-3 w-full justify-between max-w-md mx-auto"></div>
+        </div>
+
+        <!-- Main Content Area: Divided into Repeating (Red) and Today Only (Blue) -->
+        <div class="flex-1 overflow-y-auto px-6 py-6 space-y-8 max-w-md mx-auto w-full no-scrollbar">
+            
+            <!-- SECTION 1: REPEATING ITEMS (RED LINE) -->
+            <div class="space-y-4">
+                <!-- Red Line Divider -->
+                <div class="w-full h-[2px] bg-red-500/80 rounded-full shadow-[0_0_8px_rgba(239,68,68,0.5)]"></div>
+                
+                <!-- Repeating Items Container -->
+                <div id="repeatingList" class="space-y-2"></div>
+
+                <!-- Add Button & Inline Input -->
+                <div class="pt-1">
+                    <div id="addRepeatingForm" class="hidden flex items-center space-x-2 bg-zinc-900/80 border border-zinc-800 rounded-xl px-4 py-2.5">
+                        <input id="addRepeatingInput" type="text" placeholder="" class="bg-transparent text-white w-full focus:outline-none text-base" />
+                        <button id="confirmAddRepeating" class="text-red-400 p-1 font-semibold text-lg">+</button>
+                    </div>
+                    <button id="showAddRepeatingBtn" class="w-full py-3 bg-zinc-900/40 hover:bg-zinc-900 border border-zinc-800/80 rounded-xl flex items-center justify-center text-red-500 font-bold text-xl active:scale-[0.98] transition-all">
+                        +
+                    </button>
+                </div>
+            </div>
+
+            <!-- SECTION 2: TODAY ONLY ITEMS (BLUE LINE) -->
+            <div class="space-y-4">
+                <!-- Blue Line Divider -->
+                <div class="w-full h-[2px] bg-blue-500/80 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
+                
+                <!-- Today Only Items Container -->
+                <div id="oneTimeList" class="space-y-2"></div>
+
+                <!-- Add Button & Inline Input -->
+                <div class="pt-1">
+                    <div id="addOneTimeForm" class="hidden flex items-center space-x-2 bg-zinc-900/80 border border-zinc-800 rounded-xl px-4 py-2.5">
+                        <input id="addOneTimeInput" type="text" placeholder="" class="bg-transparent text-white w-full focus:outline-none text-base" />
+                        <button id="confirmAddOneTime" class="text-blue-400 p-1 font-semibold text-lg">+</button>
+                    </div>
+                    <button id="showAddOneTimeBtn" class="w-full py-3 bg-zinc-900/40 hover:bg-zinc-900 border border-zinc-800/80 rounded-xl flex items-center justify-center text-blue-500 font-bold text-xl active:scale-[0.98] transition-all">
+                        +
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const DAYS_KR = ['일', '월', '화', '수', '목', '금', '토'];
+        
+        // Initial Default Structure if local storage is empty
+        const defaultData = {
+            lastDate: getTodayDateString(),
+            repeating: {
+                0: ["차키", "지갑"],          // Sun
+                1: ["노트북", "충전기", "사원증"], // Mon
+                2: ["노트북", "운동복"],       // Tue
+                3: ["노트북", "충전기"],       // Wed
+                4: ["노트북", "사원증"],       // Thu
+                5: ["노트북", "이어폰"],       // Fri
+                6: ["지갑", "모자"]           // Sat
+            },
+            oneTime: {
+                // Keyed by "YYYY-MM-DD": ["우산", ...]
+            }
+        };
+
+        let appData = loadAppData();
+        let currentTodayIndex = new Date().getDay(); // 0-6
+        let selectedSettingsDay = currentTodayIndex; // Currently viewed day in settings
+        
+        let todayItemsQueue = [];
+        let currentItemIndex = 0;
+
+        // Smooth Long Press Gauge Parameters using requestAnimationFrame
+        let holdAnimFrame = null;
+        let holdStartTime = null;
+        let isHolding = false;
+        const HOLD_DURATION_MS = 850; // 약 0.85초의 경쾌하고 부드러운 속도
+        const CIRCLE_RADIUS = 52;
+        const CIRCLE_CIRCUMFERENCE = 2 * Math.PI * CIRCLE_RADIUS;
+
+        // Audio Feedback Synthesizer for completion
+        let audioCtx = null;
+
+        const mainScreen = document.getElementById('mainScreen');
+        const settingsScreen = document.getElementById('settingsScreen');
+        const openSettingsBtn = document.getElementById('openSettingsBtn');
+        const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+        
+        const currentItemText = document.getElementById('currentItemText');
+        const holdCircleBtn = document.getElementById('holdCircleBtn');
+        const progressRing = document.getElementById('progressRing');
+        const checkIcon = document.getElementById('checkIcon');
+
+        const daySelectorContainer = document.getElementById('daySelectorContainer');
+        const repeatingList = document.getElementById('repeatingList');
+        const oneTimeList = document.getElementById('oneTimeList');
+
+        const showAddRepeatingBtn = document.getElementById('showAddRepeatingBtn');
+        const addRepeatingForm = document.getElementById('addRepeatingForm');
+        const addRepeatingInput = document.getElementById('addRepeatingInput');
+        const confirmAddRepeating = document.getElementById('confirmAddRepeating');
+
+        const showAddOneTimeBtn = document.getElementById('showAddOneTimeBtn');
+        const addOneTimeForm = document.getElementById('addOneTimeForm');
+        const addOneTimeInput = document.getElementById('addOneTimeInput');
+        const confirmAddOneTime = document.getElementById('confirmAddOneTime');
+
+        function getTodayDateString() {
+            const d = new Date();
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function loadAppData() {
+            const stored = localStorage.getItem('routine_app_data');
+            let data = stored ? JSON.parse(stored) : defaultData;
+            
+            // Check for date change to clean up old "One Time" items
+            const todayStr = getTodayDateString();
+            if (data.lastDate !== todayStr) {
+                // Remove all one-time entries prior to today
+                if (data.oneTime) {
+                    Object.keys(data.oneTime).forEach(dateKey => {
+                        if (dateKey < todayStr) {
+                            delete data.oneTime[dateKey];
+                        }
+                    });
+                }
+                data.lastDate = todayStr;
+                localStorage.setItem('routine_app_data', JSON.stringify(data));
+            }
+            return data;
+        }
+
+        function saveData() {
+            localStorage.setItem('routine_app_data', JSON.stringify(appData));
+        }
+
+        function initTodayQueue() {
+            const todayStr = getTodayDateString();
+            const dayIndex = new Date().getDay();
+
+            const repeating = appData.repeating[dayIndex] || [];
+            const oneTime = (appData.oneTime && appData.oneTime[todayStr]) ? appData.oneTime[todayStr] : [];
+
+            // Combine both lists (Repeating top, OneTime bottom)
+            todayItemsQueue = [...repeating, ...oneTime];
+            currentItemIndex = 0;
+
+            renderCurrentMainItem();
+        }
+
+        function renderCurrentMainItem() {
+            if (todayItemsQueue.length === 0 || currentItemIndex >= todayItemsQueue.length) {
+                // Everything completed for today
+                currentItemText.innerText = "";
+                checkIcon.classList.remove('hidden', 'apple-check-active');
+                // Trigger reflow to restart spring checkmark animation cleanly
+                void checkIcon.offsetWidth;
+                checkIcon.classList.add('apple-check-active');
+                resetProgressInstant();
+                return;
+            }
+
+            checkIcon.classList.add('hidden');
+            checkIcon.classList.remove('apple-check-active');
+            currentItemText.style.opacity = '0';
+            currentItemText.style.transform = 'translateY(-10px)';
+
+            setTimeout(() => {
+                currentItemText.innerText = todayItemsQueue[currentItemIndex];
+                currentItemText.style.opacity = '1';
+                currentItemText.style.transform = 'translateY(0)';
+            }, 150);
+
+            resetProgressInstant();
+        }
+
+        function resetProgressInstant() {
+            // Cancel transition delay instantly for clean switching to next item
+            progressRing.style.transition = 'none';
+            progressRing.style.strokeDashoffset = CIRCLE_CIRCUMFERENCE;
+            holdCircleBtn.classList.remove('holding-active');
+        }
+
+        function resetProgress() {
+            // Smooth release animation when letting go early
+            progressRing.style.transition = 'stroke-dashoffset 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
+            progressRing.style.strokeDashoffset = CIRCLE_CIRCUMFERENCE;
+            holdCircleBtn.classList.remove('holding-active');
+        }
+
+        function setProgress(percent) {
+            const offset = CIRCLE_CIRCUMFERENCE - (percent / 100) * CIRCLE_CIRCUMFERENCE;
+            progressRing.style.strokeDashoffset = offset;
+        }
+
+        function startHolding(e) {
+            if (todayItemsQueue.length === 0 || currentItemIndex >= todayItemsQueue.length) return;
+            if (e) e.preventDefault();
+
+            isHolding = true;
+            holdCircleBtn.classList.add('holding-active');
+            // Disable CSS transition during manual frame updating for absolute 60fps/120fps smoothness
+            progressRing.style.transition = 'none';
+
+            if (holdAnimFrame) cancelAnimationFrame(holdAnimFrame);
+            holdStartTime = performance.now();
+
+            function renderFrame(now) {
+                const elapsed = now - holdStartTime;
+                const progress = Math.min(elapsed / HOLD_DURATION_MS, 1);
+
+                setProgress(progress * 100);
+
+                if (progress < 1) {
+                    holdAnimFrame = requestAnimationFrame(renderFrame);
+                } else {
+                    holdAnimFrame = null;
+                    isHolding = false;
+                    onHoldCompleted();
+                }
+            }
+
+            holdAnimFrame = requestAnimationFrame(renderFrame);
+        }
+
+        function stopHolding() {
+            if (!isHolding) return;
+            isHolding = false;
+
+            if (holdAnimFrame) {
+                cancelAnimationFrame(holdAnimFrame);
+                holdAnimFrame = null;
+            }
+            resetProgress();
+        }
+
+        function playCompletionSound() {
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+                osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); // A5
+
+                gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+            } catch (err) {
+                // Audio context block handling
+            }
+        }
+
+        function triggerHaptic() {
+            if (navigator.vibrate) {
+                navigator.vibrate([40, 30, 60]);
+            }
+        }
+
+        function onHoldCompleted() {
+            playCompletionSound();
+            triggerHaptic();
+
+            // Lock progress ring at 100% full
+            setProgress(100);
+
+            // Apple style micro-bounce tactile snap (no heavy glow or checkmark clutter on intermediate items)
+            holdCircleBtn.classList.add('complete-snap');
+
+            // Slide & fade out current item text
+            currentItemText.style.opacity = '0';
+            currentItemText.style.transform = 'translateY(-8px)';
+
+            // Quick 180ms transition for fast, crisp rhythm
+            setTimeout(() => {
+                holdCircleBtn.classList.remove('complete-snap');
+                
+                currentItemIndex++;
+                renderCurrentMainItem();
+            }, 180);
+        }
+
+        function renderDaySelector() {
+            daySelectorContainer.innerHTML = '';
+            
+            // Days ordered Monday to Sunday (1, 2, 3, 4, 5, 6, 0)
+            const dayOrder = [1, 2, 3, 4, 5, 6, 0];
+
+            dayOrder.forEach((dayIdx) => {
+                const dayName = DAYS_KR[dayIdx];
+                const isSelected = dayIdx === selectedSettingsDay;
+
+                const btn = document.createElement('button');
+                btn.className = `w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm transition-all duration-200 ${
+                    isSelected 
+                        ? 'bg-white text-black scale-110 shadow-lg' 
+                        : 'bg-zinc-900 text-zinc-400 hover:text-white'
+                }`;
+                btn.innerText = dayName;
+                btn.onclick = () => {
+                    selectedSettingsDay = dayIdx;
+                    renderDaySelector();
+                    renderSettingsLists();
+                };
+                daySelectorContainer.appendChild(btn);
+            });
+        }
+
+        function renderSettingsLists() {
+            // Render Repeating List
+            repeatingList.innerHTML = '';
+            const repItems = appData.repeating[selectedSettingsDay] || [];
+
+            repItems.forEach((item, index) => {
+                const row = createItemRow(item, () => {
+                    appData.repeating[selectedSettingsDay].splice(index, 1);
+                    saveData();
+                    renderSettingsLists();
+                });
+                repeatingList.appendChild(row);
+            });
+
+            // Render Today Only List for selected day
+            oneTimeList.innerHTML = '';
+            const todayStr = getTodayDateString();
+            const oneTimeItems = (appData.oneTime && appData.oneTime[todayStr]) ? appData.oneTime[todayStr] : [];
+
+            // Show one-time items if viewing today's day
+            if (selectedSettingsDay === currentTodayIndex) {
+                oneTimeItems.forEach((item, index) => {
+                    const row = createItemRow(item, () => {
+                        appData.oneTime[todayStr].splice(index, 1);
+                        saveData();
+                        renderSettingsLists();
+                    });
+                    oneTimeList.appendChild(row);
+                });
+            }
+        }
+
+        function createItemRow(text, onDelete) {
+            const div = document.createElement('div');
+            div.className = 'flex items-center justify-between bg-zinc-900/60 border border-zinc-800/80 px-4 py-3.5 rounded-xl text-white font-medium text-base group';
+            
+            const span = document.createElement('span');
+            span.innerText = text;
+
+            const delBtn = document.createElement('button');
+            delBtn.className = 'text-zinc-500 hover:text-red-400 p-1 transition-colors';
+            delBtn.innerHTML = `
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            `;
+            delBtn.onclick = onDelete;
+
+            div.appendChild(span);
+            div.appendChild(delBtn);
+            return div;
+        }
+
+        showAddRepeatingBtn.onclick = () => {
+            showAddRepeatingBtn.classList.add('hidden');
+            addRepeatingForm.classList.remove('hidden');
+            addRepeatingInput.focus();
+        };
+
+        confirmAddRepeating.onclick = () => {
+            const val = addRepeatingInput.value.trim();
+            if (val) {
+                if (!appData.repeating[selectedSettingsDay]) {
+                    appData.repeating[selectedSettingsDay] = [];
+                }
+                appData.repeating[selectedSettingsDay].push(val);
+                saveData();
+                addRepeatingInput.value = '';
+                renderSettingsLists();
+            }
+            addRepeatingForm.classList.add('hidden');
+            showAddRepeatingBtn.classList.remove('hidden');
+        };
+
+        addRepeatingInput.onkeydown = (e) => {
+            if (e.key === 'Enter') confirmAddRepeating.click();
+        };
+
+        showAddOneTimeBtn.onclick = () => {
+            showAddOneTimeBtn.classList.add('hidden');
+            addOneTimeForm.classList.remove('hidden');
+            addOneTimeInput.focus();
+        };
+
+        confirmAddOneTime.onclick = () => {
+            const val = addOneTimeInput.value.trim();
+            if (val) {
+                const todayStr = getTodayDateString();
+                if (!appData.oneTime) appData.oneTime = {};
+                if (!appData.oneTime[todayStr]) appData.oneTime[todayStr] = [];
+
+                appData.oneTime[todayStr].push(val);
+                saveData();
+                addOneTimeInput.value = '';
+                renderSettingsLists();
+            }
+            addOneTimeForm.classList.add('hidden');
+            showAddOneTimeBtn.classList.remove('hidden');
+        };
+
+        addOneTimeInput.onkeydown = (e) => {
+            if (e.key === 'Enter') confirmAddOneTime.click();
+        };
+
+        openSettingsBtn.onclick = () => {
+            selectedSettingsDay = currentTodayIndex;
+            renderDaySelector();
+            renderSettingsLists();
+
+            mainScreen.classList.add('opacity-0', 'pointer-events-none');
+            settingsScreen.classList.remove('opacity-0', 'pointer-events-none');
+            settingsScreen.classList.add('opacity-100');
+        };
+
+        closeSettingsBtn.onclick = () => {
+            settingsScreen.classList.remove('opacity-100');
+            settingsScreen.classList.add('opacity-0', 'pointer-events-none');
+            mainScreen.classList.remove('opacity-0', 'pointer-events-none');
+            mainScreen.classList.add('opacity-100');
+
+            // Refresh queue upon returning
+            initTodayQueue();
+        };
+
+        // Long Press Mouse/Touch Events
+        holdCircleBtn.addEventListener('mousedown', startHolding);
+        holdCircleBtn.addEventListener('mouseup', stopHolding);
+        holdCircleBtn.addEventListener('mouseleave', stopHolding);
+
+        holdCircleBtn.addEventListener('touchstart', startHolding, { passive: false });
+        holdCircleBtn.addEventListener('touchend', stopHolding);
+        holdCircleBtn.addEventListener('touchcancel', stopHolding);
+
+        // Prevent context menu on long touch
+        holdCircleBtn.addEventListener('contextmenu', (e) => e.preventDefault());
+
+        window.onload = () => {
+            initTodayQueue();
+        };
+    </script>
+</body>
+</html>
